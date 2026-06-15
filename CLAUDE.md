@@ -7,22 +7,53 @@ You can find things like:
 - Team management
 - Media library
 
-This project is a monorepo with a root only package.json of dependencies.
-Made with PNPM.
-We have 3 important folders
+This project is a monorepo with a root-only `package.json`. Requires **Node 22.12.x** and **pnpm 10.6.1**.
+Workspaces use the `@gitroom/*` package name prefix.
 
-- apps/backend - this is where the API code is (NESTJS)
-- apps/orchestrator - this is temporal, it's for background jobs (NESTJS) it contains all the workflows and activities
-- apps/frontend - this is the code of the frontend (Vite ReactJS)
-- /libraries contains a lot of services shared between backend and orchestrator and frontend components.
+## Quick Start
+
+```bash
+pnpm install            # also runs prisma-generate via postinstall
+pnpm dev                # backend + orchestrator + frontend + extension in parallel
+pnpm dev:docker         # start Postgres/Redis via docker-compose.dev.yaml
+pnpm test               # jest --coverage --detectOpenHandles (junit reporter)
+pnpm build              # frontend + backend + orchestrator
+pnpm lint               # lint only from the root, never from a subpackage
+pnpm prisma-db-push     # destructive: --accept-data-loss
+pnpm prisma-generate    # regenerate Prisma client
+```
+
+## Workspaces
+
+```text
+apps/
+  backend/         NestJS API (controllers/services/repositories)
+  orchestrator/    NestJS + Temporal workflows and activities
+  frontend/        Vite + React (config: apps/frontend/tailwind.config.cjs)
+  commands/        NestJS CLI app (build with `pnpm commands:build:development`)
+  extension/       Browser extension (built with `pnpm build:extension`)
+  sdk/             Published as @gitroom/sdk (`pnpm publish-sdk`)
+libraries/
+  nestjs-libraries/       Server-side: Prisma schema, integrations, services
+  helpers/                Auth, decorators, fetch hooks (@gitroom/react/helpers/...)
+  react-shared-libraries/  Shared React components and UI primitives
+```
+
+## Prisma
+
+Schema lives at `libraries/nestjs-libraries/src/database/prisma/schema.prisma`.
+Always run `pnpm prisma-generate` after schema changes.
 
 We are using only pnpm, don't use any other dependency manager.
 Never install frontend components from npmjs, focus on writing native components.
 
-The project uses tailwind 3, before writing any component look at:
-- /apps/frontend/src/app/colors.scss
-- /apps/frontend/src/app/global.scss
-- /apps/frontend/tailwind.config.js
+The project uses tailwind 3. Before writing any component look at:
+- `apps/frontend/src/app/colors.scss`
+- `apps/frontend/src/app/global.scss`
+- `apps/frontend/tailwind.config.cjs`
+
+Shared UI primitives live in `libraries/react-shared-libraries/src/`, not in
+`apps/frontend/src/components/ui/` (that folder is mostly icons and small utilities).
 
 All the --color-custom* are deprecated, don't use them.
 
@@ -37,9 +68,9 @@ Most of the server logic should be inside of libs/server.
 The backend repository is mostly used to write controller, and import files from libs.server.
 
 For the frontend follow this:
-- Many of the UI components lives in /apps/frontend/src/components/ui
+- Shared UI primitives live in `libraries/react-shared-libraries/src/`. `apps/frontend/src/components/ui/` only contains icons and small utilities.
 - Routing is in /apps/frontend/src/app
-- Components are in /apps/frontend/src/components
+- Feature components are in /apps/frontend/src/components
 - always use SWR to fetch stuff, and use "useFetch" hook from /libraries/helpers/src/utils/custom.fetch.tsx
 
 When using SWR, each one have to be in a seperate hook and must comply with react-hooks/rules-of-hooks, never put eslint-disable-next-line on it.
@@ -60,3 +91,13 @@ const useCommunity = () => {
 - Linting of the project can run only from the root.
 - Use only pnpm.
 - The system is in production with many users, if you want to change something, you need to be sure that you are not breaking anything for existing users and a migration might be needed
+
+## graphify
+
+This project has a knowledge graph at graphify-out/ with god nodes, community structure, and cross-file relationships.
+
+Rules:
+- For codebase questions, first run `graphify query "<question>"` when graphify-out/graph.json exists. Use `graphify path "<A>" "<B>"` for relationships and `graphify explain "<concept>"` for focused concepts. These return a scoped subgraph, usually much smaller than GRAPH_REPORT.md or raw grep output.
+- If graphify-out/wiki/index.md exists, use it for broad navigation instead of raw source browsing.
+- Read graphify-out/GRAPH_REPORT.md only for broad architecture review or when query/path/explain do not surface enough context.
+- After modifying code, run `graphify update .` to keep the graph current (AST-only, no API cost).
