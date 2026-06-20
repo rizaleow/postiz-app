@@ -10,6 +10,8 @@ You can find things like:
 This project is a monorepo with a root-only `package.json`. Requires **Node 22.12.x** and **pnpm 10.6.1**.
 Workspaces use the `@gitroom/*` package name prefix.
 
+> Gotcha: `package.json` has a stale `volta.node: 20.17.0` pin that conflicts with `engines` (Node 22.12.x). If you use Volta, override it to a 22.12.x toolchain — Node 20 will fail `engines`.
+
 ## Quick Start
 
 ```bash
